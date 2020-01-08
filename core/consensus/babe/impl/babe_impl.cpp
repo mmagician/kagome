@@ -57,6 +57,7 @@ namespace kagome::consensus {
     current_slot_ = current_epoch_.start_slot;
     slots_leadership_ = lottery_->slotsLeadership(current_epoch_, keypair_);
     next_slot_finish_time_ = starting_slot_finish_time;
+    syncCounter = 0;
 
     runSlot();
   }
@@ -68,6 +69,37 @@ namespace kagome::consensus {
                     next_slot_finish_time_};
   }
 
+  void BabeImpl::syncEpoch() {
+    // assuming we keep track of block arrival times
+    // get the latest N blocks (1200?) from the longest finalized chain
+    // blocks = longest_chain_of_length_N
+
+    // determine the slot number of next block, s
+    // s = blocks[last].slot
+
+    // list T_s[] = {}
+    // for block_i in blocks
+    //     s_bi = block_i.slot
+    //     T_i = block_i.block_arrival_time + slot_duration * slot_offset(s_bi, i)
+    //     T_s.push_back(T_i)
+
+    // T_s = sorted(T_s)
+
+    // finally we set the next slot finish time to the median value
+    // next_slot_finish_time_ = median(T_s)
+  }
+
+  bool BabeImpl::isSyncingEpoch() {
+    // figure out how many finalized blocks have arrived since last syncEpoch
+    // Compare against a fixed constant to determine if we should already run syncEpoch
+    // if (syncCounter >= X) {
+    //     return true
+    // }
+    // else {
+    //     return false
+    // }
+    }
+
   void BabeImpl::runSlot() {
     using std::chrono::operator""ms;
     static constexpr auto kMaxLatency = 5000ms;
@@ -77,6 +109,16 @@ namespace kagome::consensus {
       return finishEpoch();
     }
     log_->debug("starting a slot with number {}", current_slot_);
+
+    // figure out if syncing needed
+    if (isSyncingEpoch()) {
+        syncEpoch();
+        // reset the counter
+         syncCounter = 0;
+    } else {
+        // increment the counter
+         syncCounter++;
+    }
 
     // check that we are really in the middle of the slot, as expected; we can
     // cooperate with a relatively little (kMaxLatency) latency, as our node

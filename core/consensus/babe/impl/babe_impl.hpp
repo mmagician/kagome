@@ -93,6 +93,20 @@ namespace kagome::consensus {
      */
     void synchronizeSlots();
 
+    /**
+     * Updates next_slot_finish_time_ using the median algorithm 5.2 as described in the spec
+     * To be called periodically to determine whether our internal clock has drifted and to
+     * update our notion of next_slot_finish_time_
+     */
+     void syncEpoch();
+
+     /**
+      * Determine if we should run syncEpoch (optional, but would be a performance improvement
+      * so we don't need to run the median -> i.e. sorting algorithm on 1200 blocks
+      * each time - which is O(n log(n)) for standard implementation )
+      */
+     bool isSyncingEpoch();
+
    private:
     std::shared_ptr<BabeLottery> lottery_;
     std::shared_ptr<authorship::Proposer> proposer_;
@@ -110,6 +124,8 @@ namespace kagome::consensus {
     BabeSlotNumber current_slot_{};
     BabeLottery::SlotsLeadership slots_leadership_;
     BabeTimePoint next_slot_finish_time_;
+
+    int syncCounter;
 
     decltype(event_bus_.getChannel<event::BabeErrorChannel>()) &error_channel_;
     common::Logger log_;
