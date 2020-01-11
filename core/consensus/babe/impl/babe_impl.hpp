@@ -135,6 +135,13 @@ namespace kagome::consensus {
     BabeTimePoint next_slot_finish_time_;
 
     int syncCounter;
+
+    /**
+     * hashtable with blockhash as key and arrival time of the block as value
+     * TODO Still need to figure out exactly where this could be updated
+     * TODO Perhaps in BlockTreeImpl::addBlock? Then either this hashtable cant be private
+     * TODO Or we create a setter/updater method for BlockTreeImpl to use it
+     */
     std::map<primitives::BlockHash, BabeTimePoint> block_arrival_time_map;
 
 
