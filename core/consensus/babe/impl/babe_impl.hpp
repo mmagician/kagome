@@ -63,6 +63,9 @@ namespace kagome::consensus {
     void runEpoch(Epoch epoch,
                   BabeTimePoint starting_slot_finish_time) override;
 
+    template<typename Type>
+    Type medianImplementation(std::vector<Type> list);
+
     BabeMeta getBabeMeta() const override;
 
    private:
@@ -98,10 +101,10 @@ namespace kagome::consensus {
      * To be called periodically to determine whether our internal clock has drifted and to
      * update our notion of next_slot_finish_time_
      */
-     void syncEpoch();
+    BabeTimePoint getMedianSlotTime();
 
      /**
-      * Determine if we should run syncEpoch (optional, but would be a performance improvement
+      * Determine if we should run getMedianSlotTime (optional, but would be a performance improvement
       * so we don't need to run the median -> i.e. sorting algorithm on 1200 blocks
       * each time - which is O(n log(n)) for standard implementation )
       */
@@ -129,6 +132,7 @@ namespace kagome::consensus {
 
     decltype(event_bus_.getChannel<event::BabeErrorChannel>()) &error_channel_;
     common::Logger log_;
+
   };
 }  // namespace kagome::consensus
 

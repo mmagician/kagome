@@ -5,6 +5,7 @@
 
 #include "consensus/babe/impl/babe_impl.hpp"
 
+#include <algorithm>
 #include <cmath>
 
 #include <sr25519/sr25519.h>
@@ -16,6 +17,7 @@
 #include "network/types/block_announce.hpp"
 #include "primitives/inherent_data.hpp"
 #include "scale/scale.hpp"
+using namespace kagome::primitives;
 
 namespace kagome::consensus {
   BabeImpl::BabeImpl(std::shared_ptr<BabeLottery> lottery,
@@ -69,8 +71,51 @@ namespace kagome::consensus {
                     next_slot_finish_time_};
   }
 
-  void BabeImpl::syncEpoch() {
-    // assuming we keep track of block arrival times
+  bool timeComparator(BabeTimePoint a, BabeTimePoint b) {
+      return a > b;
+  }
+
+  template<typename Type>
+  Type BabeImpl::medianImplementation(std::vector<Type> list) {
+    std::sort(list.begin(), list.end());
+    Type median = list[list.size()/2];
+
+    if (list.size()%2 == 0) {
+        Type median2 = list[list.size()/2 + 1];
+        // time points can't be really added, but time_point and duration can
+        // subtraction works however, giving duration
+        // so lets combine time point and diference between them, i.e. duration
+        return median + (median2-median) / 2;
+    } else {
+        return median;
+    }
+  }
+
+  BabeTimePoint BabeImpl::getMedianSlotTime() {
+    // get the last N finalized blocks of this epoch
+    int slot_tail = 1200;
+    BlockHash latestBlockHash = block_tree_->getLastFinalized();
+
+    BabeSlotNumber next_slot_number;
+    outcome::result<std::vector<primitives::BlockHash>> result = block_tree_->getChainByBlock(latestBlockHash, false, slot_tail);
+    std::vector<primitives::BlockHash> subChain = result.value();
+
+    std::vector<BabeTimePoint> projection_times;
+
+    for(std::vector<int>::size_type i = 0; i != subChain.size(); i++) {
+        primitives::BlockHash hash = subChain[i];
+        // get this block's header
+        BabeBlockHeader babe_header;
+        int slot_offset = next_slot_number - babe_header.slot_number;
+        BabeTimePoint projected_next_slot_time =
+                babe_header.arrival_time + slot_offset * current_epoch_.slot_duration;
+        projection_times.push_back(projected_next_slot_time);
+    }
+
+    BabeTimePoint median = medianImplementation(projection_times);
+    return median;
+
+      // assuming we keep track of block arrival times
     // get the latest N blocks (1200?) from the longest finalized chain
     // blocks = longest_chain_of_length_N
 
@@ -90,8 +135,8 @@ namespace kagome::consensus {
   }
 
   bool BabeImpl::isSyncingEpoch() {
-    // figure out how many finalized blocks have arrived since last syncEpoch
-    // Compare against a fixed constant to determine if we should already run syncEpoch
+    // figure out how many finalized blocks have arrived since last getMedianSlotTime
+    // Compare against a fixed constant to determine if we should already run getMedianSlotTime
     // if (syncCounter >= X) {
     //     return true
     // }
@@ -111,14 +156,14 @@ namespace kagome::consensus {
     log_->debug("starting a slot with number {}", current_slot_);
 
     // figure out if syncing needed
-    if (isSyncingEpoch()) {
-        syncEpoch();
+//    if (isSyncingEpoch()) {
+//        getMedianSlotTime();
         // reset the counter
-         syncCounter = 0;
-    } else {
+//         syncCounter = 0;
+//    } else {
         // increment the counter
-         syncCounter++;
-    }
+//         syncCounter++;
+//    }
 
     // check that we are really in the middle of the slot, as expected; we can
     // cooperate with a relatively little (kMaxLatency) latency, as our node

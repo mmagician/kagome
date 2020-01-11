@@ -23,6 +23,8 @@ namespace kagome::consensus {
     crypto::VRFOutput vrf_output;
     /// authority index of the producer
     primitives::AuthorityIndex authority_index{};
+
+    BabeTimePoint arrival_time{};
   };
 
   /**
