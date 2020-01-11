@@ -63,8 +63,14 @@ namespace kagome::consensus {
     void runEpoch(Epoch epoch,
                   BabeTimePoint starting_slot_finish_time) override;
 
+    /**
+     * Used for calculating the median element of a list
+     * @tparam Type Generic type which performs basic comparison and + and - operations
+     * @param list array of items of generic type
+     * @return median item in the list
+     */
     template<typename Type>
-    Type medianImplementation(std::vector<Type> list);
+    Type getMedianElement(std::vector<Type> list);
 
     BabeMeta getBabeMeta() const override;
 

@@ -249,10 +249,10 @@ TEST_F(BabeTest, BigDelay) {
 TEST_F(BabeTest, MedianCorrect) {
     auto now = clock_->now();
     std::vector<BabeTimePoint> even = {now + 10ms, now, now + 20ms, now - 10ms};
-    BabeTimePoint median = babe_->medianImplementation(even);
+    BabeTimePoint median = babe_->getMedianElement(even);
     ASSERT_EQ(median, now + 5ms);
 
     std::vector<BabeTimePoint> odd = {now + 10ms, now, now + 20ms};
-    median = babe_->medianImplementation(odd);
+    median = babe_->getMedianElement(odd);
     ASSERT_EQ(median, now + 10ms);
 }

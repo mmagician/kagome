@@ -71,12 +71,8 @@ namespace kagome::consensus {
                     next_slot_finish_time_};
   }
 
-  bool timeComparator(BabeTimePoint a, BabeTimePoint b) {
-      return a > b;
-  }
-
   template<typename Type>
-  Type BabeImpl::medianImplementation(std::vector<Type> list) {
+  Type BabeImpl::getMedianElement(std::vector<Type> list) {
     std::sort(list.begin(), list.end());
     Type median = list[list.size()/2];
 
@@ -84,7 +80,7 @@ namespace kagome::consensus {
         Type median2 = list[list.size()/2 - 1];
         // time points can't be really added, but time_point and duration can
         // subtraction works however, giving duration
-        // so lets combine time point and diference between them, i.e. duration
+        // so lets combine time point and difference between them, i.e. duration
         return median + (median2-median) / 2;
     } else {
         return median;
@@ -112,26 +108,8 @@ namespace kagome::consensus {
         projection_times.push_back(projected_next_slot_time);
     }
 
-    BabeTimePoint median = medianImplementation(projection_times);
+    BabeTimePoint median = getMedianElement(projection_times);
     return median;
-
-      // assuming we keep track of block arrival times
-    // get the latest N blocks (1200?) from the longest finalized chain
-    // blocks = longest_chain_of_length_N
-
-    // determine the slot number of next block, s
-    // s = blocks[last].slot
-
-    // list T_s[] = {}
-    // for block_i in blocks
-    //     s_bi = block_i.slot
-    //     T_i = block_i.block_arrival_time + slot_duration * slot_offset(s_bi, i)
-    //     T_s.push_back(T_i)
-
-    // T_s = sorted(T_s)
-
-    // finally we set the next slot finish time to the median value
-    // next_slot_finish_time_ = median(T_s)
   }
 
   bool BabeImpl::isSyncingEpoch() {
