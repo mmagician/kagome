@@ -89,10 +89,15 @@ namespace kagome::consensus {
 
   BabeTimePoint BabeImpl::getMedianSlotTime() {
     // get the last N finalized blocks of this epoch
-    int slot_tail = 1200;
-    BlockHash latestBlockHash = block_tree_->getLastFinalized();
+    static int slot_tail = 1200;
 
-    BabeSlotNumber next_slot_number;
+    blockchain::BlockTree::BlockInfo deepestLeaf = block_tree_->deepestLeaf();
+    BlockHash latestBlockHash = deepestLeaf.block_hash;
+
+    // TODO getBabeHeader from blockHash
+    BabeBlockHeader babeHeader;
+    BabeSlotNumber next_slot_number = babeHeader.slot_number + 1;
+
     outcome::result<std::vector<primitives::BlockHash>> result = block_tree_->getChainByBlock(latestBlockHash, false, slot_tail);
     std::vector<primitives::BlockHash> subChain = result.value();
 
@@ -100,11 +105,12 @@ namespace kagome::consensus {
 
     for(std::vector<int>::size_type i = 0; i != subChain.size(); i++) {
         primitives::BlockHash hash = subChain[i];
-        // get this block's header
+        // TODO getBabeHeader from blockHash
         BabeBlockHeader babe_header;
         int slot_offset = next_slot_number - babe_header.slot_number;
+        BabeTimePoint arrival_time_i = block_arrival_time_map[hash];
         BabeTimePoint projected_next_slot_time =
-                babe_header.arrival_time + slot_offset * current_epoch_.slot_duration;
+                arrival_time_i + slot_offset * current_epoch_.slot_duration;
         projection_times.push_back(projected_next_slot_time);
     }
 
@@ -121,7 +127,10 @@ namespace kagome::consensus {
     // else {
     //     return false
     // }
-    }
+    // TODO for now just return true, left for implementation later
+    return true;
+
+  }
 
   void BabeImpl::runSlot() {
     using std::chrono::operator""ms;
@@ -133,14 +142,15 @@ namespace kagome::consensus {
     }
     log_->debug("starting a slot with number {}", current_slot_);
 
-    // figure out if syncing needed
+//    // figure out if syncing needed
 //    if (isSyncingEpoch()) {
-//        getMedianSlotTime();
-        // reset the counter
-//         syncCounter = 0;
+//        BabeTimePoint t = getMedianSlotTime();
+//        next_slot_finish_time_ = t;
+//        // reset the counter
+////         syncCounter = 0;
 //    } else {
-        // increment the counter
-//         syncCounter++;
+//        // increment the counter
+////         syncCounter++;
 //    }
 
     // check that we are really in the middle of the slot, as expected; we can

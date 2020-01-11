@@ -135,8 +135,10 @@ namespace kagome::consensus {
     BabeTimePoint next_slot_finish_time_;
 
     int syncCounter;
+    std::map<primitives::BlockHash, BabeTimePoint> block_arrival_time_map;
 
-    decltype(event_bus_.getChannel<event::BabeErrorChannel>()) &error_channel_;
+
+      decltype(event_bus_.getChannel<event::BabeErrorChannel>()) &error_channel_;
     common::Logger log_;
 
   };
