@@ -81,7 +81,7 @@ namespace kagome::consensus {
     Type median = list[list.size()/2];
 
     if (list.size()%2 == 0) {
-        Type median2 = list[list.size()/2 + 1];
+        Type median2 = list[list.size()/2 - 1];
         // time points can't be really added, but time_point and duration can
         // subtraction works however, giving duration
         // so lets combine time point and diference between them, i.e. duration
