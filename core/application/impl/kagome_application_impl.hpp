@@ -29,7 +29,7 @@ namespace kagome::application {
     using Proposer = authorship::Proposer;
     using SR25519Keypair = crypto::SR25519Keypair;
     using Synchronizer = consensus::Synchronizer;
-    using SystemClock = clock::SystemClock;
+    using SteadyClock = clock::SteadyClock;
     using Timer = clock::Timer;
     using InjectorType = decltype(injector::makeApplicationInjector(
         std::string{}, std::string{}, std::string{}));
@@ -63,7 +63,7 @@ namespace kagome::application {
     sptr<boost::asio::io_context> io_context_;
     sptr<ConfigurationStorage> config_storage_;
     sptr<KeyStorage> key_storage_;
-    sptr<clock::SystemClock> clock_;
+    sptr<clock::SteadyClock> clock_;
     sptr<ExtrinsicApiService> extrinsic_api_service_;
     sptr<Babe> babe_;
 

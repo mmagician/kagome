@@ -20,13 +20,13 @@ namespace kagome::clock {
 
     ~BasicWaitableTimer() override = default;
 
-    void expiresAt(clock::SystemClock::TimePoint at) override;
+    void expiresAt(clock::SteadyClock::TimePoint at) override;
 
     void asyncWait(
         const std::function<void(const std::error_code &)> &h) override;
 
    private:
-    boost::asio::basic_waitable_timer<std::chrono::system_clock> timer_;
+    boost::asio::basic_waitable_timer<std::chrono::steady_clock> timer_;
   };
 }  // namespace kagome::clock
 

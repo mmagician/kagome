@@ -55,7 +55,7 @@ class BabeTest : public testing::Test {
       std::make_shared<BabeGossiperMock>();
   SR25519Keypair keypair_{generateSR25519Keypair()};
   AuthorityIndex authority_id_ = {1};
-  std::shared_ptr<SystemClockMock> clock_ = std::make_shared<SystemClockMock>();
+  std::shared_ptr<SteadyClockMock> clock_ = std::make_shared<SteadyClockMock>();
   std::shared_ptr<HasherMock> hasher_ = std::make_shared<HasherMock>();
   std::unique_ptr<testutil::TimerMock> timer_mock_ =
       std::make_unique<testutil::TimerMock>();
@@ -96,7 +96,7 @@ class BabeTest : public testing::Test {
 
   Hash256 created_block_hash_{createHash(3)};
 
-  SystemClockImpl real_clock_{};
+  SteadyClockImpl real_clock_{};
 
   decltype(event_bus_.getChannel<event::BabeErrorChannel>()) &error_channel_{
       event_bus_.getChannel<event::BabeErrorChannel>()};

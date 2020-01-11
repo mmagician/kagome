@@ -14,7 +14,7 @@
 
 namespace kagome::consensus {
   /// BABE uses system clock's time points
-  using BabeTimePoint = clock::SystemClock::TimePoint;
+  using BabeTimePoint = clock::SteadyClock::TimePoint;
 
   /// slot number of the Babe production
   using BabeSlotNumber = uint64_t;

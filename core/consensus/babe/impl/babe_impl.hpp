@@ -53,7 +53,7 @@ namespace kagome::consensus {
              std::shared_ptr<network::BabeGossiper> gossiper,
              crypto::SR25519Keypair keypair,
              primitives::AuthorityIndex authority_index,
-             std::shared_ptr<clock::SystemClock> clock,
+             std::shared_ptr<clock::SteadyClock> clock,
              std::shared_ptr<crypto::Hasher> hasher,
              std::unique_ptr<clock::Timer> timer,
              libp2p::event::Bus &event_bus);
@@ -114,7 +114,7 @@ namespace kagome::consensus {
     std::shared_ptr<network::BabeGossiper> gossiper_;
     crypto::SR25519Keypair keypair_;
     primitives::AuthorityIndex authority_index_;
-    std::shared_ptr<clock::SystemClock> clock_;
+    std::shared_ptr<clock::SteadyClock> clock_;
     std::shared_ptr<crypto::Hasher> hasher_;
     std::unique_ptr<clock::Timer> timer_;
     libp2p::event::Bus &event_bus_;
