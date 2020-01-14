@@ -10,6 +10,7 @@
 
 #include <gtest/gtest.h>
 #include <boost/asio/io_context.hpp>
+#include <mock/core/blockchain/header_repository_mock.hpp>
 #include "clock/impl/clock_impl.hpp"
 #include "consensus/babe/babe_error.hpp"
 #include "mock/core/authorship/proposer_mock.hpp"
@@ -51,6 +52,8 @@ class BabeTest : public testing::Test {
   std::shared_ptr<ProposerMock> proposer_ = std::make_shared<ProposerMock>();
   std::shared_ptr<BlockTreeMock> block_tree_ =
       std::make_shared<BlockTreeMock>();
+  std::shared_ptr<BlockHeaderRepository> header_repr_ =
+      std::make_shared<HeaderRepositoryMock>();
   std::shared_ptr<BabeGossiperMock> gossiper_ =
       std::make_shared<BabeGossiperMock>();
   SR25519Keypair keypair_{generateSR25519Keypair()};
@@ -62,9 +65,11 @@ class BabeTest : public testing::Test {
   testutil::TimerMock *timer_ = timer_mock_.get();
   libp2p::event::Bus event_bus_;
 
+
   std::shared_ptr<BabeImpl> babe_ = std::make_shared<BabeImpl>(lottery_,
                                                                proposer_,
                                                                block_tree_,
+                                                               header_repr_,
                                                                gossiper_,
                                                                keypair_,
                                                                authority_id_,

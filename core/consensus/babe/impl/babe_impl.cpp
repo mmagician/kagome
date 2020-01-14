@@ -10,6 +10,7 @@
 
 #include <sr25519/sr25519.h>
 #include <boost/assert.hpp>
+#include <blockchain/block_header_repository.hpp>
 #include "common/buffer.hpp"
 #include "consensus/babe/babe_error.hpp"
 #include "consensus/babe/types/babe_block_header.hpp"
@@ -23,6 +24,7 @@ namespace kagome::consensus {
   BabeImpl::BabeImpl(std::shared_ptr<BabeLottery> lottery,
                      std::shared_ptr<authorship::Proposer> proposer,
                      std::shared_ptr<blockchain::BlockTree> block_tree,
+                     std::shared_ptr<blockchain::BlockHeaderRepository> header_repo,
                      std::shared_ptr<network::BabeGossiper> gossiper,
                      crypto::SR25519Keypair keypair,
                      primitives::AuthorityIndex authority_index,
@@ -33,6 +35,7 @@ namespace kagome::consensus {
       : lottery_{std::move(lottery)},
         proposer_{std::move(proposer)},
         block_tree_{std::move(block_tree)},
+        header_repo_{std::move(header_repo)},
         gossiper_{std::move(gossiper)},
         keypair_{keypair},
         authority_index_{authority_index},
@@ -54,7 +57,6 @@ namespace kagome::consensus {
                           BabeTimePoint starting_slot_finish_time) {
     BOOST_ASSERT(!epoch.authorities.empty());
     log_->debug("starting an epoch with index {}", epoch.epoch_index);
-
     current_epoch_ = std::move(epoch);
     current_slot_ = current_epoch_.start_slot;
     slots_leadership_ = lottery_->slotsLeadership(current_epoch_, keypair_);
@@ -87,6 +89,41 @@ namespace kagome::consensus {
     }
   }
 
+  BabeBlockHeader BabeImpl::babeHeaderFromHash(BlockHash hash) {
+  /**
+   * Basing this on getBabeDigests from babe_block_validator.cpp
+   * and getChainByBlocks from block_tree_impl.cpp
+   *
+   * Conceptually it makes sense to me, more or less:
+   * 1. Decode the hash to get the header
+   * 2. According to the docs, the babe header must be included as a digest item in the header digest
+   * 3. So we iterate through digests and decode it to get the BABE header
+   * Not 100% whether the code is 100% correct, as it's pieced from multiple different places
+   * At least the variable types match
+   */
+    auto header_res = header_repo_->getBlockHeader(hash);
+//      if (!header_res) {
+//          return Error; ???
+//      }
+    BlockHeader header = header_res.value();
+    auto digests = header.digests;
+    BabeBlockHeader babeHeader;
+
+    for (const auto &digest : gsl::make_span(digests).subspan(0, digests.size() - 1)) {
+      if (auto b_h = scale::decode<BabeBlockHeader>(digest)) {
+        // found the BabeBlockHeader digest;
+        babeHeader = std::move(b_h.value());
+        break;
+      }
+    }
+
+//    if (babeHeader == NULL) {
+//      return Error; ???
+//    }
+
+    return babeHeader;
+  }
+
   BabeTimePoint BabeImpl::getMedianSlotTime() {
     // get the last N finalized blocks of this epoch
     static int slot_tail = 1200;
@@ -94,8 +131,8 @@ namespace kagome::consensus {
     blockchain::BlockTree::BlockInfo deepestLeaf = block_tree_->deepestLeaf();
     BlockHash latestBlockHash = deepestLeaf.block_hash;
 
-    // TODO getBabeHeader from blockHash
-    BabeBlockHeader babeHeader;
+    BabeBlockHeader babeHeader = babeHeaderFromHash(latestBlockHash);
+
     BabeSlotNumber next_slot_number = babeHeader.slot_number + 1;
 
     outcome::result<std::vector<primitives::BlockHash>> result = block_tree_->getChainByBlock(latestBlockHash, false, slot_tail);
@@ -105,8 +142,8 @@ namespace kagome::consensus {
 
     for(std::vector<int>::size_type i = 0; i != subChain.size(); i++) {
         primitives::BlockHash hash = subChain[i];
-        // TODO getBabeHeader from blockHash
-        BabeBlockHeader babe_header;
+
+        BabeBlockHeader babe_header = babeHeaderFromHash(hash);
         int slot_offset = next_slot_number - babe_header.slot_number;
         BabeTimePoint arrival_time_i = block_arrival_time_map[hash];
         BabeTimePoint projected_next_slot_time =
@@ -143,15 +180,15 @@ namespace kagome::consensus {
     log_->debug("starting a slot with number {}", current_slot_);
 
 //    // figure out if syncing needed
-//    if (isSyncingEpoch()) {
-//        BabeTimePoint t = getMedianSlotTime();
-//        next_slot_finish_time_ = t;
-//        // reset the counter
-////         syncCounter = 0;
-//    } else {
-//        // increment the counter
-////         syncCounter++;
-//    }
+    if (isSyncingEpoch()) {
+        BabeTimePoint t = getMedianSlotTime();
+        next_slot_finish_time_ = t;
+        // reset the counter
+//         syncCounter = 0;
+    } else {
+        // increment the counter
+//         syncCounter++;
+    }
 
     // check that we are really in the middle of the slot, as expected; we can
     // cooperate with a relatively little (kMaxLatency) latency, as our node

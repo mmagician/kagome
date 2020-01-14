@@ -10,6 +10,8 @@
 
 #include <boost/asio/basic_waitable_timer.hpp>
 #include <outcome/outcome.hpp>
+#include <blockchain/block_header_repository.hpp>
+#include <consensus/babe/types/babe_block_header.hpp>
 #include "authorship/proposer.hpp"
 #include "blockchain/block_tree.hpp"
 #include "clock/timer.hpp"
@@ -50,6 +52,7 @@ namespace kagome::consensus {
     BabeImpl(std::shared_ptr<BabeLottery> lottery,
              std::shared_ptr<authorship::Proposer> proposer,
              std::shared_ptr<blockchain::BlockTree> block_tree,
+             std::shared_ptr<blockchain::BlockHeaderRepository> header_repo,
              std::shared_ptr<network::BabeGossiper> gossiper,
              crypto::SR25519Keypair keypair,
              primitives::AuthorityIndex authority_index,
@@ -120,6 +123,7 @@ namespace kagome::consensus {
     std::shared_ptr<BabeLottery> lottery_;
     std::shared_ptr<authorship::Proposer> proposer_;
     std::shared_ptr<blockchain::BlockTree> block_tree_;
+    std::shared_ptr<blockchain::BlockHeaderRepository> header_repo_;
     std::shared_ptr<network::BabeGossiper> gossiper_;
     crypto::SR25519Keypair keypair_;
     primitives::AuthorityIndex authority_index_;
@@ -148,6 +152,7 @@ namespace kagome::consensus {
       decltype(event_bus_.getChannel<event::BabeErrorChannel>()) &error_channel_;
     common::Logger log_;
 
+      kagome::consensus::BabeBlockHeader babeHeaderFromHash(primitives::BlockHash hash);
   };
 }  // namespace kagome::consensus
 
